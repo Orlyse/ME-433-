@@ -78,6 +78,12 @@ int main()
     //  gpio_set_irq_enabled_with_callback(BUTTON, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
     gpio_set_irq_enabled_with_callback(BUTTON, GPIO_IRQ_EDGE_RISE, true, &gpio_callback);
 
+    while (!stdio_usb_connected()){
+        sleep_ms(1000);
+    }
+
+    printf("Starting...\r\n");
+
     while (true) {    
         ;  }
 }
