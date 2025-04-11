@@ -48,7 +48,7 @@ void toggle_led(){
 
     for (int i=0; i< samps; i++){
         printf("V = %.2f\r\n", voltage);
-        sleep_ms(100);
+        sleep_ms(10);
     }    
     
 }
