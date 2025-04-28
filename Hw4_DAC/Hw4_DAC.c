@@ -2,6 +2,7 @@
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
 #include <math.h>
+#include"Hw4_DAC.h"
 
 // SPI Defines
 // We are going to use SPI 0, and allocate it to the following GPIO pins
