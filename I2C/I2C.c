@@ -35,7 +35,6 @@ void turn_on_LED(){
     buf1[0] = 0b00001010;   // address of the OLAT register
     buf1[1] = 0b10000000;   // set gp7 HIGH
     i2c_write_byte(buf1);
-
 }
 
 void turn_off_LED(){
@@ -72,9 +71,9 @@ int main()
     gpio_pull_up(I2C_SCL);
     // For more examples of I2C use see https://github.com/raspberrypi/pico-examples/tree/master/i2c
 
-    while(!stdio_usb_connected()){
-        sleep_ms(1000);
-    }
+    //while(!stdio_usb_connected()){
+    //    sleep_ms(1000);
+    //}
 
     uint8_t buf[2];
     buf[0] = 0;           // address of the IODIR register
