@@ -28,31 +28,30 @@ set(PICO_BOARD pico2 CACHE STRING "Board type")
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
 
-project(Hw3_CDC_IO_ADC C CXX ASM)
+project(gpio_test C CXX ASM)
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(Hw3_CDC_IO_ADC Hw3_CDC_IO_ADC.c )
+add_executable(gpio_test gpio_test.c )
 
-pico_set_program_name(Hw3_CDC_IO_ADC "Hw3_CDC_IO_ADC")
-pico_set_program_version(Hw3_CDC_IO_ADC "0.1")
+pico_set_program_name(gpio_test "gpio_test")
+pico_set_program_version(gpio_test "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
-    pico_enable_stdio_uart(Hw3_CDC_IO_ADC 0)
-    pico_enable_stdio_usb(Hw3_CDC_IO_ADC 1)
+pico_enable_stdio_uart(gpio_test 0)
+pico_enable_stdio_usb(gpio_test 1)
 
 # Add the standard library to the build
-target_link_libraries(Hw3_CDC_IO_ADC
-        pico_stdlib
-        hardware_adc)
+target_link_libraries(gpio_test
+        pico_stdlib)
 
 # Add the standard include files to the build
-target_include_directories(Hw3_CDC_IO_ADC PRIVATE
+target_include_directories(gpio_test PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
 )
 
-pico_add_extra_outputs(Hw3_CDC_IO_ADC)
+pico_add_extra_outputs(gpio_test)
 
