@@ -18,9 +18,9 @@ void set_pwm(int pin, uint16_t wrap, float divider, float level){
 }
 
 /*
-0 to 360 degrees ==> level 375 to 1875
+0 to 180 degrees ==> level 375 to 1875
 
-1 degree = 1/360 * 1500 = 4.167 level
+1 degree = 1/180 * 1500 = 4.167 level
 
 */
 void move_motor(float degree){
@@ -29,30 +29,8 @@ void move_motor(float degree){
     float n_lvl = 1875 - lvl;
 
     set_pwm(LEDPin, 15000, 200, n_lvl);
-
-    /*
-    uint slice = pwm_gpio_to_slice_num(LEDPin); // Get PWM slice number
-
-    for(int i=0; i<5; i++){
-        set_pwm(LEDPin, 15000, 200, 40);
-        sleep_ms(800);  
-        pwm_set_enabled(slice, false);  
-        sleep_ms(800);
-    }
-    */
 }
 
-void move_motor_ccw(int angle){
-    uint slice = pwm_gpio_to_slice_num(LEDPin); // Get PWM slice number
-    pwm_set_output_polarity(slice, true, true);
-    
-    for(int i=0; i<5; i++){
-        set_pwm(LEDPin, 15000, 200, 40);
-        sleep_ms(800);  
-        pwm_set_enabled(slice, false);  
-        sleep_ms(800);
-    }
-}
 
 int main()
 {
@@ -64,8 +42,6 @@ int main()
     uint slice = pwm_gpio_to_slice_num(LEDPin); // Get PWM slice number
     pwm_set_enabled(slice, false);  
 
-
-    
     move_motor(180);
 
     while (true) {
