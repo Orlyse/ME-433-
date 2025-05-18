@@ -235,7 +235,7 @@ int main()
         for (int i = 0; i < NUM_PIXELS; i++) {
             
             float curr_hue = fmod((start_hue + (90.0*i)), 360);
-            wsColor color =  HSBtoRGB(curr_hue, 1.0, 0.5);
+            wsColor color =  HSBtoRGB(curr_hue, 1.0, 1);
             put_pixel(pio, sm, urgb_u32(color.r, color.g, color.b));
         }
 
