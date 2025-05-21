@@ -28,37 +28,30 @@ set(PICO_BOARD pico2 CACHE STRING "Board type")
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
 
-project(I2C_display C CXX ASM)
+project(camera C CXX ASM)
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(I2C_display I2C_display.c ssd1306.c)
+add_executable(camera camera.c )
 
-pico_set_program_name(I2C_display "I2C_display")
-pico_set_program_version(I2C_display "0.1")
+pico_set_program_name(camera "camera")
+pico_set_program_version(camera "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(I2C_display 0)
-pico_enable_stdio_usb(I2C_display 1)
+pico_enable_stdio_uart(camera 0)
+pico_enable_stdio_usb(camera 0)
 
 # Add the standard library to the build
-target_link_libraries(I2C_display
+target_link_libraries(camera
         pico_stdlib)
 
 # Add the standard include files to the build
-target_include_directories(I2C_display PRIVATE
+target_include_directories(camera PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
 )
 
-# Add any user requested libraries
-target_link_libraries(I2C_display 
-        hardware_i2c
-        hardware_pwm
-        hardware_adc
-        )
-
-pico_add_extra_outputs(I2C_display)
+pico_add_extra_outputs(camera)
 

@@ -14,7 +14,7 @@ void set_pwm(int pin, uint16_t wrap, float divider, float level){
     //uint16_t wrap = 50000; // when to rollover, must be less than 65535
     pwm_set_wrap(slice_num, wrap);
     pwm_set_enabled(slice_num, true); // turn on the PWM
-    pwm_set_gpio_level(pin, level); // set the duty cycle to 50%
+    pwm_set_gpio_level(pin, level); // 0 < level < wrap
 }
 
 /*
