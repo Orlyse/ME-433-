@@ -87,6 +87,7 @@ int main()
     sprintf(message, "Orlyse");
 
     while (true) {
+        
         // Blink LED at 1 Hz
         gpio_put(LEDPin, 0);
         sleep_ms(500);
@@ -113,7 +114,7 @@ int main()
         write_sentence(10, 20, fps);
 
         ssd1306_update();
-        
+              
         
 
     }

@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
+#include "ssd1306.h"
+#include "font.h"
+#include <stdlib.h>
+#include <math.h>
 
 // I2C defines
 // This example will use I2C0 on GPIO8 (SDA) and GPIO9 (SCL) running at 400KHz.
@@ -8,7 +12,8 @@
 #define I2C_PORT i2c0
 #define I2C_SDA 16
 #define I2C_SCL 17
-#define ACC_M  0b1101000 
+#define ACC_M  0b1101000    // IMU address
+
 
 // config registers
 #define CONFIG 0x1A
@@ -47,10 +52,41 @@ void i2c_read_byte(uint8_t reg, uint8_t *buf){
 
 void i2c_write_byte(uint8_t *buf){
     sleep_ms(100);
-    printf("\nStarting write... \r\n");
+    //printf("\nStarting write... \r\n");
     int written = i2c_write_blocking(I2C_PORT, ACC_M, buf, 2, false);
-    printf("Num bytes written = %d\r\n", written);
+    //printf("Num bytes written = %d\r\n", written);
     sleep_ms(100);
+}
+
+int draw_char(int x, int y, char letter){
+    int ascii = letter - 32;
+    //printf("ascii value = %d\r\n", ascii);
+
+    for(int i=0; i<5; i++){ // i = x
+        uint8_t hex_val = ASCII[ascii][i];
+        //printf("ascii[%d][%d] = %x\r\n", ascii, i, hex_val);
+        
+        if (hex_val){
+            int bit1 = (hex_val >> 7) & 0x01;
+            int bit2 = (hex_val >> 6) & 0x01;
+            int bit3 = (hex_val >> 5) & 0x01;
+            int bit4 = (hex_val >> 4) & 0x01;
+            int bit5 = (hex_val >> 3) & 0x01;
+            int bit6 = (hex_val >> 2) & 0x01;
+            int bit7 = (hex_val >> 1) & 0x01;
+            int bit8 = hex_val & 0x01;
+
+            uint8_t y_vals[8] = {bit8, bit7, bit6, bit5, bit4, bit3, bit2, bit1};
+            
+            for (int j=0; j<8; j++){
+                //printf("bit %d = %d\r\n", j, y_vals[j]);
+                if (y_vals[j]){
+                    ssd1306_drawPixel(i+x, j+y, 1);
+                }              
+
+            }
+        }
+    }
 }
 
 void initialize_MPU6050(){
@@ -76,19 +112,21 @@ void initialize_MPU6050(){
     //sleep_ms(100);
 }
 
-void data_out(uint8_t* data_buf, uint16_t *measurements){
+void data_out(uint8_t* data_buf, int16_t *measurements){
+    printf("\nCombining data bytes\r\n");
     int curr = 0;
 
     for (int i=0; i<7; i++){
-        uint16_t val1  = data_buf[curr];     // MSB
-        uint16_t val2 = data_buf[curr+1];    // LSB
+        int16_t val1  = data_buf[curr];     // MSB
+        int16_t val2 = data_buf[curr+1];    // LSB
 
         measurements[i] = (val1 << 8) | val2;
         curr += 2;
     }
+    printf("\nData computation done...\r\n");
 }
 
-void read_all_data(uint8_t *buf){
+void read_all_data(int8_t *buf){
     
     uint8_t curr_reg = ACCEL_XOUT_H;
 
@@ -98,6 +136,70 @@ void read_all_data(uint8_t *buf){
     }
 
     printf("\nReading Completed...\n");
+}
+
+void display_IMU_readings(int16_t* measures){
+    float ax = measures[0]/16384.0;
+    float ay = measures[1]/16384.0;
+    float az = measures[2]/16384.0;
+    float temp = (measures[3]+521)/340.0;
+    float rx = measures[4]/16.4;
+    float ry = measures[5]/16.4;
+    float rz = measures[6]/16.4;
+
+    printf("Acc x = %.2f\r\n", ax);
+    printf("Acc y = %.2f\r\n", ay);
+    printf("Acc z = %.2f\r\n", az);
+
+    printf("Temp = %.2f\r\n", temp);
+    
+    printf("Rot x = %.2f\r\n", rx);
+    printf("Rot y = %.2f\r\n", ry);
+    printf("Rot z = %.2f\r\n", rz);
+
+}
+
+void draw_dir(int magnitude, int x, int y){
+    int len = abs(magnitude);
+
+    for (int i=0; i<len; i++){
+        draw_char(x+magnitude, y+i, '_');
+    }
+}
+
+void draw_line_hor(int x0, int y0, int x1){
+    int dx = (x1 > x0) ? 1 : -1;  // Step direction
+    for (int x = x0; x != x1; x += dx){
+        draw_char(x, y0, '_');
+    }
+    draw_char(x1, y0, '_'); // Include last point
+}
+
+void draw_line_ver(int x0, int y0, int y1){
+    int dy = (y1 > y0) ? 1 : -1;  // Step direction
+    for (int y = y0; y != y1; y += dy){
+        draw_char(x0, y, '|');
+    }
+    draw_char(x0, y1, '|'); // Include last point
+}
+
+void acc_rep(int16_t* measures){
+    float ax = (measures[0]/16384.0)*9.81;
+    float ay = (measures[1]/16384.0)*9.81;
+    
+    int x0 = 63;
+    int y0 = 15;
+
+    int x1 = x0+(int) ax*10;
+    int y1 = y0+(int) ay*10;
+
+    if (x1!=x0){
+        draw_line_hor(x0, y0, x1);
+    }
+    
+    if (y1!=y0){
+        draw_line_ver(x0, y0, y1);
+    }
 }
 
 int main()
@@ -113,50 +215,66 @@ int main()
     gpio_pull_up(I2C_SCL);
     // For more examples of I2C use see https://github.com/raspberrypi/pico-examples/tree/master/i2c
 
-    while(!stdio_usb_connected()){
-        sleep_ms(100);
-    }
+    
+    // Initialize IMU
     initialize_MPU6050();
-
-    uint8_t data=0;
-    uint8_t who_am_i = WHO_AM_I;
-    printf("\nReading from %x\r\n", who_am_i);
-    sleep_ms(100);
-
-    i2c_read_byte(who_am_i, &data);
-    printf("Value at who am i = %x\r\n", data);
-
+    // Initialize display
+    ssd1306_setup();
+    ssd1306_clear();
+    ssd1306_update();
+ 
     printf("\rReading all data registers:\r\n");
     sleep_ms(100);
-    
-    uint8_t all_data[14];
-    read_all_data(all_data);
 
-    uint16_t measures[7];
-    data_out(all_data, measures);
+    /*  REGISTER DESCRIPTION: 
+        ACCEL_XOUT_H 0x3B
+        ACCEL_XOUT_L 0x3C
+        Accelaration about the x axis in gs
+        
+        ACCEL_YOUT_H 0x3D
+        ACCEL_YOUT_L 0x3E
+        Accelaration about the x axis in gs
 
-    uint8_t curr = ACCEL_XOUT_H;
-    sleep_ms(100);
 
-    for (int j=0; j<14; j++){
-        printf("%d\n", j);
-        sleep_ms(10);
-        printf("Register %x = %d\r\n", curr, all_data[j]);
-        curr += 1;
-    }
+        ACCEL_ZOUT_H 0x3F
+        ACCEL_ZOUT_L 0x40
+        Accelaration about the x axis in gs
 
-    sleep_ms(100);
+        TEMP_OUT_H   0x41
+        TEMP_OUT_L   0x42
+        Temperature in degrees celcius
 
-    int val=0;
+        GYRO_XOUT_H  0x43
+        GYRO_XOUT_L  0x44
+        Acceleration about x in deg/sec
 
-    for (int k=0; k<7; k++){
-        printf("%d --> %d\r\n", k, measures[k]);
-    }
+        GYRO_YOUT_H  0x45
+        GYRO_YOUT_L  0x46
+        Acceleration about y in deg/sec
 
-    /*
-    while (true) {
-        printf("Hello, world!\n");
-        sleep_ms(1000);
-    }
+        GYRO_ZOUT_H  0x47
+        GYRO_ZOUT_L  0x48
+        Acceleration about z in deg/sec
     */
+    
+    while (true) {
+        ssd1306_clear();
+        //draw_char(63, 16, '[');
+        //draw_char(64, 16, '_');
+        //draw_char(65, 16, ']');
+        
+        int8_t all_data[14];
+        read_all_data(all_data);
+
+        int16_t measures[7];
+        data_out(all_data, measures);
+        display_IMU_readings(measures);
+        acc_rep(measures);
+
+        ssd1306_update();
+        
+        sleep_ms(1000);
+        
+    }
+    
 }
