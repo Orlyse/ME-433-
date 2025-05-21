@@ -15,20 +15,6 @@
 #define I2C_SCL 17
 #define LEDPin 18
 
-void set_pwm(int pin, uint16_t wrap, float divider, float level){
-    // freq = 150M / Divider*wrap
-    // Duty cyce = Level/wrap
-
-    gpio_set_function(pin, GPIO_FUNC_PWM); // Set the LED Pin to be PWM
-    uint slice_num = pwm_gpio_to_slice_num(pin); // Get PWM slice number
-    //float div = 3; // must be between 1-255
-    pwm_set_clkdiv(slice_num, divider); // divider
-    //uint16_t wrap = 50000; // when to rollover, must be less than 65535
-    pwm_set_wrap(slice_num, wrap);
-    pwm_set_enabled(slice_num, true); // turn on the PWM
-    pwm_set_gpio_level(pin, level); // 0 < level < wrap
-}
-
 int draw_char(int x, int y, char letter){
     int ascii = letter - 32;
     //printf("ascii value = %d\r\n", ascii);
