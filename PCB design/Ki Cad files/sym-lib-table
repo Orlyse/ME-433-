@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "Orlyse")(type "KiCad")(uri "${KIPRJMOD}/Orlyse.kicad_sym")(options "")(descr ""))
+)
