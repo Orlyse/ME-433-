@@ -28,33 +28,32 @@ set(PICO_BOARD pico2 CACHE STRING "Board type")
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
 
-project(camera C CXX ASM)
+project(motor_control C CXX ASM)
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(camera camera.c )
+add_executable(motor_control motor_control.c )
 
-pico_set_program_name(camera "camera")
-pico_set_program_version(camera "0.1")
+pico_set_program_name(motor_control "motor_control")
+pico_set_program_version(motor_control "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(camera 0)
-pico_enable_stdio_usb(camera 1)
+pico_enable_stdio_uart(motor_control 0)
+pico_enable_stdio_usb(motor_control 1)
 
 # Add the standard library to the build
-target_link_libraries(camera
+target_link_libraries(motor_control
         pico_stdlib
-        hardware_i2c
         hardware_pwm
-        hardware_gpio)
+        )
 
 # Add the standard include files to the build
-target_include_directories(camera PRIVATE
+target_include_directories(motor_control PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
 )
 
-pico_add_extra_outputs(camera)
+pico_add_extra_outputs(motor_control)
 

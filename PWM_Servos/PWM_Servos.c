@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/pwm.h"
-#define LEDPin 18 // the built in LED on the Pico
+#define LEDPin 18 
 
 void set_pwm(int pin, uint16_t wrap, float divider, float level){
     // freq = 150M / Divider*wrap
