@@ -40,7 +40,7 @@ void duty_cycle_set(char* dc){
         }
         else{
             //printf("Addiing...\r\n");
-            current_pwm += 10;
+            current_pwm += 1;
         }
     }
 
@@ -51,7 +51,7 @@ void duty_cycle_set(char* dc){
     
 
         else{
-            current_pwm -= 10;
+            current_pwm -= 1;
             //printf("Subtracting...\r\n");
         }
     }
