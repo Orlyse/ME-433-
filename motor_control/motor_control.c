@@ -7,8 +7,8 @@
 #include "hardware/pwm.h"
 #include "hardware/gpio.h"
 
-#define PWM 19 
-#define PHASE 18
+#define PWM 20
+#define PHASE 16
 
 static volatile int current_pwm = 100;
 
@@ -40,7 +40,7 @@ void duty_cycle_set(char* dc){
         }
         else{
             //printf("Addiing...\r\n");
-            current_pwm += 1;
+            current_pwm += 10;
         }
     }
 
@@ -51,7 +51,7 @@ void duty_cycle_set(char* dc){
     
 
         else{
-            current_pwm -= 1;
+            current_pwm -= 10;
             //printf("Subtracting...\r\n");
         }
     }
@@ -79,7 +79,7 @@ int main()
         sleep_ms(10);
     }
 
-    set_pwm(PWM, 100, 150, current_pwm);
+    set_pwm(PWM, 100, 15, current_pwm);
 
     
 

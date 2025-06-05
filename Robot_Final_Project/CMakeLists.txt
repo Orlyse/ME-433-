@@ -35,7 +35,7 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(Robot_Final_Project Robot_Final_Project.c )
+add_executable(Robot_Final_Project Robot_Final_Project.c cam cam.c)
 
 pico_set_program_name(Robot_Final_Project "Robot_Final_Project")
 pico_set_program_version(Robot_Final_Project "0.1")
@@ -48,6 +48,8 @@ pico_enable_stdio_usb(Robot_Final_Project 1)
 target_link_libraries(Robot_Final_Project
         pico_stdlib
         hardware_pwm
+        hardware_gpio
+        hardware_i2c
         )
 
 # Add the standard include files to the build

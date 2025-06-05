@@ -330,7 +330,7 @@ bool line(int pixel, int row){
 }
 
 // threshold and then find the center of mass of a row
-int findLine(int row){
+int findLine(int row, int *s, int *e){
     int pos = 0;
     int r = row*IMAGESIZEX; // find the index of the start of the row in the pixel array
     int sumMass = 0;
@@ -360,28 +360,28 @@ int findLine(int row){
             end = i;
         }
     }
+
+    *s = start;
+    *e = end;
+
     int avgBright = sumBright / IMAGESIZEX;
-    //printf("\nAverage B = %d\r\n", avgBright);
-    //printf("Start = %d, end = %d\r\n", start, end);
+    printf("\nAverage B = %d\r\n", avgBright);
+    printf("Start = %d, end = %d\r\n", start, end);
 
     // threshold the row
     for(i=0;i<IMAGESIZEX;i++){
         int mass = picture.r[r+i] + picture.g[r+i] + picture.b[r+i];
         if (mass < avgBright){
             // not bright enough, set pixel to black
-            
             picture.r[r+i] = 0;
             picture.g[r+i] = 0;
             picture.b[r+i] = 0;
-            
         }
         else {
             // set to white
-            
             picture.r[r+i] = 255;
             picture.g[r+i] = 255;
             picture.b[r+i] = 255;
-            
         }
     }
 
@@ -400,7 +400,6 @@ int findLine(int row){
         float centerMass = (float)sumMassR / sumMass;
         centerOfMass = centerMass; 
     }
-    //  
     
     return centerOfMass;
 }

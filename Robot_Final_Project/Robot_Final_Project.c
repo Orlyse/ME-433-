@@ -6,17 +6,22 @@
 #include "pico/stdlib.h"
 #include "hardware/pwm.h"
 #include "hardware/gpio.h"
+#include "cam.h"
 
-#define PWM 19 
-#define PHASE 18
+#define PWMR 19 
+#define PWML 20
+#define PHASER 17
+#define PHASEL 16
+#define BASE_SPEED 25
 
-static volatile int current_pwm = 0;
+void pin_init(){
+    gpio_init(PHASER);
+    gpio_init(PHASEL);
 
-void phase_pin_init(){
-    gpio_init(PHASE);
-    gpio_set_dir(PHASE, GPIO_OUT);
-
+    gpio_set_dir(PHASEL, GPIO_OUT);
+    gpio_set_dir(PHASER, GPIO_OUT);
 }
+
 void set_pwm(int pin, uint16_t wrap, float divider, float level){
     // freq = 150M / Divider*wrap
     // Duty cyce = Level/wrap
@@ -31,67 +36,245 @@ void set_pwm(int pin, uint16_t wrap, float divider, float level){
     pwm_set_gpio_level(pin, level); // 0 < level < wrap
 }
 
-void duty_cycle_set(char* dc){
-    //printf("char dc = %c\n", *dc);
+void read_camera(int *cm, int *srt, int *stp, int *cm1, int *srt1, int *stp1){
+    setSaveImage(1);
+    while(getSaveImage()==1){}
+    convertImage();
+    //printImage();
 
-    if (dc[0] == '+'){
-        if (current_pwm == 100){
-            ; // do nothing
-        }
-        else{
-            //printf("Addiing...\r\n");
-            current_pwm += 10;
-        }
-    }
-
-    else if (dc[0] == '-'){
-        if (current_pwm == -100){
-            ;   // do nothing
-        }
+    int s, e, s1, e1;
     
+    int com = findLine(10, &s, &e); // calculate the position of the center of the ine
+    printf("Com = %d\r\n", com); // comment this when testing with python
 
-        else{
-            current_pwm -= 10;
-            //printf("Subtracting...\r\n");
-        }
-    }
+    int com1 = findLine(40, &s1, &e);
+    printf("Com1 = %d\r\n",com1); // comment this when testing with python
+
+    *cm = com;
+    *cm1 = com1;
+
+    *srt = s;
+    *stp = e;
+
+    *srt1 = s1;
+    *stp1 = e1;
+        
+    //  setPixel(IMAGESIZEY/2,com,0,255,0); // draw the center so you can see it in python
+    //  printImage(); 
+
+    // return 0;
 }
 
-void dc_compute(int pwm_value){
-    int abs_pwm = abs(current_pwm);
 
-    if (pwm_value<0){
-        gpio_put(PHASE, false);
+float clamp(float val, float min, float max){
+    if (val < min){val = min;}
+    if (val > max){val = max;}
+
+    return val;
+}
+
+void wait(int prevr, int prevl){
+    float sr = clamp((float) prevr*0.6, 20.0, 30.0);
+    float sl = clamp((float) prevl*0.6, 20.0, 30.0);
+
+    set_pwm(PWMR, 100, 15, (int) sr);   
+    set_pwm(PWML, 100, 15, (int) sl); 
+    sleep_ms(300);  // 850 good 
+    //  set_pwm(PWMR, 100, 15, BASE_SPEED);   
+    //  set_pwm(PWML, 100, 15, BASE_SPEED); 
+}
+
+
+void sharp_turn(int dir){
+    // 1 = left
+    // 0 = right
+    /*
+    if (dir == 0){ 
+        // right gets a -ve pwm
+        printf("Here r\r\n");
+        gpio_put(PWMR, false);
+
+        set_pwm(PWML, 100, 15, 100);
+        set_pwm(PWMR, 100, 15, 70);
+        //  sleep_ms(100);
+        gpio_put(PWMR, true);
     }
     else{
-        gpio_put(PHASE, true);
+        printf("Here l\r\n");
+        gpio_put(PWML, false);
+
+        set_pwm(PWML, 100, 15, 70);
+        set_pwm(PWMR, 100, 15, 100);
+        //  sleep_ms(100);
+        gpio_put(PWML, true);
+    }
+    */
+   printf("here sharp\r\n");
+   if (dir == 0){
+        set_pwm(PWML, 100, 15, 50);
+        set_pwm(PWMR, 100, 15, 0);
+        sleep_ms(250);
+    }
+    else{
+        set_pwm(PWML, 100, 15, 0);
+        set_pwm(PWMR, 100, 15, 50);
+        sleep_ms(250);
+    }
+}
+static volatile float current_pwm = 0;
+static volatile float curr_pr = 0;
+static volatile float curr_pl = 0;
+static volatile float kp = 0.4; // 0.7 good
+static volatile float kd = 0.75;    // 0.65
+static volatile float ft = 0.65;
+static volatile float error_prev = 0; 
+
+
+int pd_control_01(int com, int start, int stop, int com1, int start1, int stop1){
+
+    float error = com1-40;
+    float deriv = error - error_prev;
+    float future = 0;
+
+    float corr_pwm = kp*error + kd*deriv + future;
+    int com_diff = com-com1;
+
+    if (start1 == -1 && stop1 == -1){
+        printf("Sharp right turn \r\n");
+        // sharp_turn(0);
+
+        if (com>72){
+            sharp_turn(0);
+        }
+        else if(com>0 && com<18){
+            sharp_turn(1);
+        }
+        
+        if (com < com1){
+            //  future = 0;
+            printf("Sharp right turn \r\n");
+            future = error*ft;
+            //  sharp_turn(0);
+        }
+        else{
+            //  future = 0;
+            future = -error*ft;
+            //  sharp_turn(1);
+        }
+        
+
+        //  error = 1000;
+        //  return 0;
+
+    }
+    else{
+        future = (com-com1)*ft;
     }
 
-    set_pwm(PWM, 100, 150, abs_pwm);
+    //  corr_pwm += future;
+
+    printf("Future = %.2f\r\n", future);
+    printf("Error = %.2f, derivative = %.2f, corr = %.2f\r\n", error, deriv, corr_pwm);
+    /*
+    float left_fast = clamp(BASE_SPEED+corr_pwm, BASE_SPEED, 70.0);
+    float left_slow = clamp(BASE_SPEED-corr_pwm, BASE_SPEED, 70.0);
+
+    float right_fast = clamp(BASE_SPEED+corr_pwm, BASE_SPEED, 70.0);
+    float right_slow = clamp(BASE_SPEED-corr_pwm, BASE_SPEED, 70.0);
+    */
+    /*
+    if (error == 1000){ // error is set to 0 after a sharp turn
+        set_pwm(PWML, 100, 15, 40);
+        set_pwm(PWMR, 100, 15, 40);
+        sleep_ms(100);
+        printf("Going straight after sharp turn\r\n");
+    }
+    */
+
+    if (com_diff<3 && com_diff>-3){
+        set_pwm(PWML, 100, 15, 30);
+        set_pwm(PWMR, 100, 15, 30);
+
+        curr_pl = 30;
+        curr_pr = 30;
+
+        sleep_ms(200);
+
+        wait(curr_pr, curr_pl);
+
+        printf("Going straight\r\n");
+    }
+
+    else if (com1>40){   // turn right
+        float l;
+        float r;
+        if (corr_pwm < 0){
+            l = clamp(BASE_SPEED-corr_pwm + abs(future), BASE_SPEED, 50.0);
+            r = clamp(BASE_SPEED+corr_pwm - abs(future), BASE_SPEED, 50.0);
+        }
+        else{
+            l = clamp(BASE_SPEED+corr_pwm + abs(future), BASE_SPEED, 50.0);
+            r = clamp(BASE_SPEED-corr_pwm - abs(future), BASE_SPEED, 50.0);
+        }
+
+        set_pwm(PWMR, 100, 15, (int) r);   
+        set_pwm(PWML, 100, 15, (int) l);
+
+        curr_pl = (int) l;
+        curr_pr = (int) r;
+
+        sleep_ms(250);
+
+        wait(curr_pr, curr_pl);
+
+        printf("Turning right: R = %.2f, L = %.2f\n", r, l);
+    }
+    else{   // turn left
+        float l;
+        float r;
+        if (corr_pwm<0){
+            l = clamp(BASE_SPEED+corr_pwm-abs(future), BASE_SPEED, 50.0);
+            r = clamp(BASE_SPEED-corr_pwm+abs(future), BASE_SPEED, 50.0);
+        }
+        else{
+            l = clamp(BASE_SPEED-corr_pwm-abs(future), BASE_SPEED, 50.0);
+            r = clamp(BASE_SPEED+corr_pwm+abs(future), BASE_SPEED, 50.0);
+        }
+
+        set_pwm(PWMR, 100, 15, (int) r);   
+        set_pwm(PWML, 100, 15, (int) l);
+
+        sleep_ms(250);
+
+        curr_pl = (int) l;
+        curr_pr = (int) r;
+
+        wait(curr_pr, curr_pl);
+        
+        printf("Turning left: R = %.2f, L = %.2f\n", r, l);
+    }
+    error_prev = error;
+
+    return 0;
 }
 
-int main()
-{
+int main(){
     stdio_init_all();
-    phase_pin_init();
+    pin_init();
+    init_camera_pins();
 
-    while(!stdio_usb_connected()){
-        sleep_ms(10);
-    }
+    int com, srt, stp, com1, srt1, stp1;
 
-    set_pwm(PWM, 100, 150, current_pwm);
+    gpio_put(PHASEL, false);
+    gpio_put(PHASER, false);
+    //  set_pwm(PWMR, 100, 15, -60);
 
     
-
-    while (true) {
-        char new_pwm[10];
-        scanf("%s", new_pwm); 
-        sleep_ms(100);
-
-        duty_cycle_set(new_pwm);
-        printf("Current pwm = %d\r\n", current_pwm);
-        dc_compute(current_pwm);
-
+    while(1){
+        read_camera(&com, &srt, &stp, &com1, &srt1, &stp1);
+        //  sleep_ms(100);
+        pd_control_01(com, srt, stp, com1, srt1, stp1);
         
     }
+    
 }

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "cam.h"
-
+/*
 int main()
 {
     stdio_init_all();
@@ -21,21 +21,13 @@ int main()
         setSaveImage(1);
         while(getSaveImage()==1){}
         convertImage();
-        //  printImage();
+        //printImage();
 
-        int com = findLine(10); // front
-        //  printf("Com = %d\r\n", com);
-
-        int com1 = findLine(40);    // back
-        //  printf("Com1 = %d\r\n", com1);
-
-        setPixel(10,com,0,255,0); // draw the center so you can see it in python
-        setPixel(40, com1, 0, 255, 0);
-        printImage();
-        
-
-        //  printf("%d\r\n",com); // comment this when testing with python
+        int com = findLine(IMAGESIZEY/2); // calculate the position of the center of the ine
+        setPixel(IMAGESIZEY/2,com,0,255,0); // draw the center so you can see it in python
+        //printImage();
+        printf("%d\r\n",com); // comment this when testing with python
     }
 }
 
-
+*/
